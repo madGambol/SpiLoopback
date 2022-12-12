@@ -8,12 +8,12 @@
 #include <stdio.h>
 
 #include "CSerialPrint.h"
-#include "ControlValues.h"
 #include "CHoldInterrupts.h"
 #include "stm32f3xx_hal_uart.h"
 
-extern UART_HandleTypeDef huart2;
-extern UART_HandleTypeDef huart3;
+extern UART_HandleTypeDef huart1;
+
+extern DMA_HandleTypeDef  hdma_usart1_tx;
 
 
 volatile uint8_t        CSerialPrint::gInstanceIndx = 0;
@@ -27,10 +27,13 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
    CSerialPrint::transmitComplete( huart );
 }
 
-void HAL_UART_TxHalfCpltCallback(UART_HandleTypeDef *huart)
-{
-   CSerialPrint::transmitHalfComplete( huart );
-}
+uint32_t serialOutputCompleteCounter         = 0;
+uint32_t serialInputCompleteCounter          = 0;
+
+//void HAL_UART_TxHalfCpltCallback(UART_HandleTypeDef *huart)
+//{
+//   CSerialPrint::transmitHalfComplete( huart );
+//}
 
 CSerialPrint::CSerialPrint( UART_HandleTypeDef * pUart )
 : mpUart     ( pUart ),
@@ -47,9 +50,28 @@ CSerialPrint::CSerialPrint( UART_HandleTypeDef * pUart )
 
    memset( mBuf,    0, sizeof(mBuf)    );
    memset( mBufOut, 0, sizeof(mBufOut) );
+
+   HAL_StatusTypeDef status;
+
+   HAL_UART_CallbackIDTypeDef cb;
+
+   if (mpUart->hdmatx)
+   {
+
+	   status = HAL_DMA_RegisterCallback( &hdma_usart1_tx,
+	                                      HAL_DMA_XFER_CPLT_CB_ID,
+									      CSerialPrint::DmaOutputComplete
+	                                    );
+   }
+   else
+   {
+      status = HAL_UART_RegisterCallback(mpUart, mBufOut, mCount );
+   }
+
+
 }
 
-void CSerialPrint::sendData( const uint8_t *pBuf )
+void CSerialPrint::sendData( const uint8_t * pBuf )
 {
 }
 
@@ -198,17 +220,17 @@ CSerialPrint* CSerialPrint::getInstance( UART_HandleTypeDef * pUart )
 {
    CSerialPrint* pRetVal = nullptr;
 
-   if (pUart == &huart2)
+   if (pUart == &huart1)
+   {
+      static CSerialPrint serial1( pUart );
+
+      pRetVal = &serial1;
+   }
+   else if (pUart == &huart2)
    {
       static CSerialPrint serial2( pUart );
 
       pRetVal = &serial2;
-   }
-   else if (pUart == &huart3)
-   {
-      static CSerialPrint serial3( pUart );
-
-      pRetVal = &serial3;
    }
 
    return pRetVal;
@@ -350,10 +372,10 @@ void CSerialPrint::primePump(void)
     } while(0);
 }
 
-void CSerialPrint::transmitHalfComplete( UART_HandleTypeDef * pUart )
-{
-    ++mHalfCompleteCounter;
-}
+//void CSerialPrint::transmitHalfComplete( UART_HandleTypeDef * pUart )
+//{
+//    ++mHalfCompleteCounter;
+//}
 
 #define DECR_VAL    1
 
@@ -399,29 +421,6 @@ bool putstring( const char * pStr )
    --entryCount;
 
    return bRetValue;
-}
-
-void printRange  ( const RangeSelectEnumType & rangeSelect )
-{
-    const char * pRng = "** ERROR **";
-
-    switch (rangeSelect)
-    {
-    default:
-    case RangeSelectEnumType::eLOW:
-        pRng = "eLOW";
-        break;
-    case RangeSelectEnumType::eMIDDLE:
-        pRng = "eMIDDLE";
-        break;
-    case RangeSelectEnumType::eHIGH:
-        pRng = "eHIGH";
-        break;
-    case RangeSelectEnumType::eVENTILATOR:
-        pRng = "eVENTILATOR";
-        break;
-    }
-    putstring( pRng );
 }
 
 bool putCrLf(void)
@@ -556,22 +555,3 @@ void printFileHexLine( const char * pFn, unsigned int line)
     putCrLf();
 }
 
-void print_RampTimelf( RampRateType value )
-{
-    RampRateType lvalue;
-    unsigned char i;
-
-    lvalue = value;
-
-    for (i=0; i < RAMP_DIGITS; i++)
-    {
-        digit[i] = lvalue % 10 + '0';
-        lvalue   = lvalue / 10;
-    }
-
-    for (i=0; i < RAMP_DIGITS; i++)
-    {
-        putchar(digit[RAMP_DIGITS-i-1]);
-    }
-    putCrLf();
-}

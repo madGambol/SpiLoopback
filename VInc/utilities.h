@@ -7,10 +7,7 @@
  *  Created on: October 5, 2022
  *      Author: C Arena
  */
-
-#include "PressureTypes.h"
-
-PressurecmH2OIntType myAbs(PressurecmH2OIntType x);
+#include <cstdint>
 
 int _abs_(int x);
 

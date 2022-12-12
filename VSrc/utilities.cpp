@@ -7,13 +7,6 @@
 
 #include "utilities.h"
 
-PressurecmH2OIntType myAbs( PressurecmH2OIntType x )
-{
-    PressurecmH2OIntType retVal = (x<0)?-x:x;
-
-    return retVal;
-}
-
 int _abs_(int x)
 {
   if (x < 0)

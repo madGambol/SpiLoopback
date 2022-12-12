@@ -9,10 +9,8 @@
 
 #include <cstdint>
 #include "main.h"
-#include "CVentilationTiming.h"
-#include "CBpm.h"
 
-enum { eSERBUFSIZE = 7*1024 + 128 };
+enum { eSERBUFSIZE = 1024 };
 
 class CSerialPrint
 {
@@ -63,7 +61,9 @@ public:
    static CSerialPrint & factory(void);
 
    static void transmitComplete    ( UART_HandleTypeDef * pUart );
-   static void transmitHalfComplete( UART_HandleTypeDef * pUart );
+
+   static void DmaOutputComplete   ( DMA_HandleTypeDef  * hdma  );
+   //static void DmaInputComplete    ( DMA_HandleTypeDef  * hdma  );
 };
 
 void _putchar_( char ch );
@@ -71,8 +71,6 @@ void _putchar_( char ch );
 bool putstringnlf( const char * pStr );
 
 bool putstring   ( const char * pStr );
-
-void printRange  ( const RangeSelectEnumType & rangeSelect );
 
 bool putCrLf(void);
 
@@ -95,6 +93,3 @@ void print_FloatValuenlf(float value);
 void print_unsigned_value(unsigned int value);
 
 void print_hex_unsigned_valuenlf(unsigned int value);
-
-void print_RampTimelf( RampRateType value );
-
