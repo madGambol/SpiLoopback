@@ -30,7 +30,7 @@ class CSerialPrint
    volatile uint16_t mOutIndx;      // index to the chars coming out of mBuf
    volatile uint16_t mCount;        // pending characters to go out
 
-   static volatile uint32_t mHalfCompleteCounter;
+//   static volatile uint32_t mHalfCompleteCounter;
    static volatile uint32_t mCompleteCounter;
 
    void sendData( const uint8_t * pBuf );
@@ -48,6 +48,8 @@ public:
 
    virtual ~CSerialPrint();
 
+   bool init(void);
+
    bool putChar( char ch );
 
    bool putString( const char * pStr );
@@ -62,7 +64,7 @@ public:
 
    static void transmitComplete    ( UART_HandleTypeDef * pUart );
 
-   static void DmaOutputComplete   ( DMA_HandleTypeDef  * hdma  );
+   static void dmaOutputComplete   ( DMA_HandleTypeDef  * hdma  );
    //static void DmaInputComplete    ( DMA_HandleTypeDef  * hdma  );
 };
 

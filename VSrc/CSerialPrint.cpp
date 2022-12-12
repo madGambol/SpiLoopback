@@ -12,23 +12,23 @@
 #include "stm32f3xx_hal_uart.h"
 
 extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart2;
 
-extern DMA_HandleTypeDef  hdma_usart1_tx;
-
+extern DMA_HandleTypeDef hdma_usart1_rx;
+extern DMA_HandleTypeDef hdma_usart1_tx;
+extern DMA_HandleTypeDef hdma_usart2_rx;
+extern DMA_HandleTypeDef hdma_usart2_tx;
 
 volatile uint8_t        CSerialPrint::gInstanceIndx = 0;
 CSerialPrint * CSerialPrint::gpInstance[] = {nullptr,};
 
-volatile uint32_t  CSerialPrint::mHalfCompleteCounter { 0 };
+//volatile uint32_t  CSerialPrint::mHalfCompleteCounter { 0 };
 volatile uint32_t  CSerialPrint::mCompleteCounter     { 0 };
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
    CSerialPrint::transmitComplete( huart );
 }
-
-uint32_t serialOutputCompleteCounter         = 0;
-uint32_t serialInputCompleteCounter          = 0;
 
 //void HAL_UART_TxHalfCpltCallback(UART_HandleTypeDef *huart)
 //{
@@ -50,32 +50,42 @@ CSerialPrint::CSerialPrint( UART_HandleTypeDef * pUart )
 
    memset( mBuf,    0, sizeof(mBuf)    );
    memset( mBufOut, 0, sizeof(mBufOut) );
-
-   HAL_StatusTypeDef status;
-
-   HAL_UART_CallbackIDTypeDef cb;
-
-   if (mpUart->hdmatx)
-   {
-
-	   status = HAL_DMA_RegisterCallback( &hdma_usart1_tx,
-	                                      HAL_DMA_XFER_CPLT_CB_ID,
-									      CSerialPrint::DmaOutputComplete
-	                                    );
-   }
-   else
-   {
-      status = HAL_UART_RegisterCallback(mpUart, mBufOut, mCount );
-   }
-
-
-}
-
-void CSerialPrint::sendData( const uint8_t * pBuf )
-{
 }
 
 CSerialPrint::~CSerialPrint()
+{
+}
+
+bool CSerialPrint::init(void)
+{
+	bool bRetVal = false;
+
+	HAL_StatusTypeDef status;
+
+	if (mpUart->hdmatx)
+	{
+	   status = HAL_DMA_RegisterCallback( mpUart->hdmatx,
+										  HAL_DMA_XFER_CPLT_CB_ID,
+										  CSerialPrint::dmaOutputComplete
+										);
+	}
+	else
+	{
+	  status = HAL_UART_RegisterCallback( mpUart,
+										  HAL_UART_TX_COMPLETE_CB_ID,
+										  CSerialPrint::transmitComplete
+										);
+	}
+
+	if (status == HAL_OK)
+	{
+		bRetVal = true;
+	}
+
+	return bRetVal;
+}
+
+void CSerialPrint::sendData( const uint8_t * pBuf )
 {
 }
 
@@ -252,6 +262,22 @@ void CSerialPrint::transmitComplete( UART_HandleTypeDef * pUart )
    for (indx = 0; indx < gInstanceIndx; ++indx)
    {
       if (gpInstance[indx]->mpUart == pUart)
+      {
+         gpInstance[indx]->transmitComplete();
+         break;
+      }
+   }
+}
+
+void CSerialPrint::dmaOutputComplete( DMA_HandleTypeDef * hdma )
+{
+   if (!hdma) return; // can't do anything with nullptr
+
+   uint8_t indx;
+
+   for (indx = 0; indx < gInstanceIndx; ++indx)
+   {
+      if (gpInstance[indx] && (gpInstance[indx]->mpUart) && (gpInstance[indx]->mpUart->hdmatx == hdma))
       {
          gpInstance[indx]->transmitComplete();
          break;
