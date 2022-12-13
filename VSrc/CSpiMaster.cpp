@@ -27,7 +27,7 @@ bool CSpiMaster::init(void)
 {
 	bool bRetVal = false;
 
-	HAL_StatusTypeDef status;
+	HAL_StatusTypeDef status = HAL_ERROR;
 
 	if (mpSpiDev->hdmatx && mpSpiDev->hdmarx )
 	{
@@ -36,13 +36,13 @@ bool CSpiMaster::init(void)
 										   CSpiMaster::dmaComplete
 										 );
 	}
-	else
-	{
-		status = HAL_SPI_RegisterCallback( mpSpiDev,
-										   HAL_SPI_TX_COMPLETE_CB_ID,
-										   CSpiMaster::transferComplete
-									     );
-	}
+//	else
+//	{
+//		status = HAL_SPI_RegisterCallback( mpSpiDev,
+//										   HAL_SPI_TX_COMPLETE_CB_ID,
+//										   CSpiMaster::transferComplete
+//									     );
+//	}
 
 	bRetVal = status == HAL_OK;
 
@@ -53,20 +53,26 @@ bool CSpiMaster::sendRcv( uint8_t * pBufOut, uint8_t * pBufIn, uint16_t size, in
 {
 	bool bRetVal = false;
 
-	HAL_StatusTypeDef status;
-
-	if (mpSpiDev->hdmatx && mpSpiDev->hdmarx )
+	do
 	{
+		if (!pBufOut) break;    // can't be null
+		if (!pBufIn ) break;    // can't be null
+		if (!size   ) break;    // must be > 0 bytes
+
+		if (!mpSpiDev->hdmatx) break; // must be in DMA mode
+		if (!mpSpiDev->hdmarx) break; // must be in DMA mode
+
+		mpBufOut    = pBufOut;  // record the buffer addresses and size
+		mpBufIn     = pBufIn;
+		mSndRcvSize = size;
+
+		HAL_StatusTypeDef status;
+
 		status = HAL_SPI_TransmitReceive_DMA(mpSpiDev, pBufOut, pBufIn, size );
-	}
-	else
-	{
-		// don't want to use the non-dma option -- can't keep up
-		while(1) {}
-		status = HAL_SPI_TransmitReceive(mpSpiDev, pBufOut, pBufIn, size, 10	);
-	}
 
-	bRetVal = status == HAL_OK;
+		bRetVal = status == HAL_OK;
+
+	} while(0);
 
 	return bRetVal;
 }
@@ -75,12 +81,32 @@ bool CSpiMaster::transferComplete(void)
 {
 	bool bRetVal = false;
 
+	do
+	{
+		if (!mpCB) break;
+
+		(*mpCB)( mpSpiDev, mpBufIn, mpBufOut, mSndRcvSize );
+
+		bRetVal = true;
+
+	} while(0);
+
 	return bRetVal;
 }
 
 bool CSpiMaster::dmaComplete(void)
 {
 	bool bRetVal = false;
+
+	do
+	{
+		if (!mpCB) break;
+
+		(*mpCB)( mpSpiDev, mpBufIn, mpBufOut, mSndRcvSize );
+
+		bRetVal = true;
+
+	} while(0);
 
 	return bRetVal;
 }
@@ -118,4 +144,21 @@ void CSpiMaster::dmaComplete     ( DMA_HandleTypeDef * pDma )
 	} while(0);
 }
 
+bool CSpiMaster::setCallback( transmitCompleteCB * pCB )
+{
+	bool bRetVal = false;
+
+	do
+	{
+		if (mpCB) break;
+
+		mpCB = pCB;
+
+		bRetVal = true;
+
+	} while(0);
+
+
+	return bRetVal;
+}
 
