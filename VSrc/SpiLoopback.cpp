@@ -62,6 +62,8 @@ void setUpBuf( uint8_t * pBuf, uint16_t size )
 
 }
 
+bool gbBufferMatch = false;
+
 void Main(void)
 {
 	pSerial1 = CSerialPrint::getInstance ( &huart1 );
@@ -100,6 +102,11 @@ void Main(void)
 		delay  = 1000; // one second
 		bDelay = false;
 
+		while (!bDelay) { /* wait a second here */ }
+
+		delay  = 1000; // timeout for the transfer
+		bDelay = false;
+
 		bool bSndRcv = gSpiMaster.sendRcv(bufOut, bufIn, 128, sndRcvStatus);
 
 		if (bSndRcv)
@@ -116,6 +123,8 @@ void Main(void)
 				if (memcmp(bufIn, bufOut, 128) == 0)
 				{
 					buffer.addStr("Input & output match!", "%s\n\r" );
+
+					gbBufferMatch = true;
 				}
 			}
 			else if (bDelay)
@@ -133,8 +142,14 @@ void Main(void)
 	}
 }
 
+
 void myTransmitCompleteCB( SPI_HandleTypeDef * pSpiDev, const uint8_t * pBufIn, const uint8_t * pBufOut, uint16_t size)
 {
 	gbTransmitComplete = true;
+}
+
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+	CSpiMaster::transferComplete( hspi );
 }
 
