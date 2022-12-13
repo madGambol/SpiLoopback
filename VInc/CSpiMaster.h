@@ -7,15 +7,32 @@
  */
 
 #include "main.h"
+#include <cstdint>
 
-extern SPI_HandleTypeDef hspi1;
-extern DMA_HandleTypeDef hdma_spi1_tx;
 
 class CSpiMaster
 {
+	SPI_HandleTypeDef * mpSpiDev;
+
+	static CSpiMaster * gpSpiMaster;
+
 public:
-	CSpiMaster();
+
+	CSpiMaster( SPI_HandleTypeDef * pSpi );
+
 	virtual ~CSpiMaster();
+
+	bool init(void);
+
+	bool sendRcv( uint8_t * pBufOut, uint8_t * pBufIn, uint16_t size, int & sndRcvStatus);
+
+	bool transferComplete(void);
+
+	bool dmaComplete(void);
+
+	static void transferComplete( SPI_HandleTypeDef * );
+
+	static void dmaComplete     ( DMA_HandleTypeDef * );
 
 
 };

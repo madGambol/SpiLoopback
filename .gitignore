@@ -3,3 +3,4 @@ build*
 *.lst
 *.lst
 *.d
+.DS_Store
