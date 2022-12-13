@@ -40,7 +40,7 @@ void Main(void)
 		}
 
 		pSerial1->putString  ( "\f\r\n\r\n\r\nStarting up MainCppLoop" );
-		pSerial1->putString  ( "SPI Loopback test" );
+		pSerial1->putString  ( "SPI Loop back test" );
 		pSerial1->putString  ( "\r\n" );
 
 	} while(0);
