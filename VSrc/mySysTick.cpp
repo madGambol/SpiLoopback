@@ -14,6 +14,9 @@ extern CFormattedBuffer buffer;
 volatile uint32_t delay  = 0;
 volatile bool     bDelay = false;
 
+volatile uint32_t spiDelay  = 0;
+volatile bool     bSpiDelay = false;
+
 uint32_t oneSec = 999;
 
 
@@ -26,6 +29,16 @@ void mySysTick(void)
 		if (delay == 0)
 		{
 			bDelay = true;
+		}
+	}
+
+	if (spiDelay)
+	{
+		--spiDelay;
+
+		if (spiDelay == 0)
+		{
+			bSpiDelay = true;
 		}
 	}
 

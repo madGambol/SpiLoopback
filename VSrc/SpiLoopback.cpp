@@ -63,12 +63,16 @@ CFormattedBuffer buffer;
 uint8_t spiBufIn [128] = {0,};
 uint8_t spiBufOut[128] = {0,};
 
-bool gbTransmitComplete;
+volatile bool gbTransmitComplete;
 
 int sndRcvStatus;
 
 extern volatile bool     bDelay;
 extern volatile uint32_t delay;
+
+extern volatile uint32_t spiDelay;
+extern volatile bool     bSpiDelay;
+
 
 void sendITM( const char * pStr )
 {
@@ -82,21 +86,10 @@ void sendITM( const char * pStr )
 
 		for (indx = 0; indx < len; ++indx )
 		{
-			ITM_SendChar( (uint32_t)pStr[indx] );
+			ITM_SendChar( (uint32_t)pStr[indx] ); // synchronous
 		}
 	} while(0);
 }
-
-//bool sendRcvSpiData(const uint8_t * pOut, uint8_t * pIn, size_t size )
-//{
-//	bool bRetVal = false;
-//
-//	int status   = 0;
-//
-//	bRetVal = gSpiMaster.sendRcv( pOut, pIn, size, status );
-//
-//	return bRetVal;
-//}
 
 void setUpBuf( uint8_t * pBuf, uint16_t size )
 {
@@ -153,6 +146,8 @@ void MainCpp(void)
 
 			buffer.print();
 		}
+
+		buffer.print();
 
 		gSpiMaster.init();
 
@@ -214,8 +209,8 @@ void MainCpp(void)
 
 	uint32_t loopCount = 0;
 
-	bDelay = true;
-	delay  = 0;     // will use one second
+	bDelay = false;
+	delay  = 1000;     // one second
 
 	while (1)
 	{
@@ -229,25 +224,39 @@ void MainCpp(void)
 		buffer.addStr( (const char *)spiBufOut );
 		buffer.print();
 
-		bDelay = false;
-		delay  = 1000;
+		bDelay             = false;
+		delay              = 1000;   // msec
 
-		gSpiMaster.sendRcv( spiBufOut, spiBufIn, 128, sndRcvStatus );
+		bSpiDelay          = false;
+		spiDelay           = 100;    // timeout for spi transfer to complete
 
-		while (!bDelay && !gbTransmitComplete) {}
+		gbTransmitComplete = false;
+
+		bool bSndRcv = gSpiMaster.sendRcv( spiBufOut, spiBufIn, 128, sndRcvStatus );
+
+		if (!bSndRcv)
+		{
+			buffer.addUInt( loopCount,"transfer %ld failed\r\n");
+			buffer.print();
+		}
+
+		while (!bSpiDelay && !gbTransmitComplete) {}
 
 		if (gbTransmitComplete)
 		{
-			buffer.addStr("Transmit complete.", "%s\n\r" );
-			buffer.print();
+			buffer.addUInt(loopCount, "Transmit %ld complete : " );
 
 			if (memcmp(spiBufIn, spiBufOut, 128) == 0)
 			{
 				buffer.addStr( "Input & output match!", "%s\n\r" );
-				buffer.print();
 			}
+			else
+			{
+				buffer.addStr( "Input & output DO NOT match!", "%s\n\r" );
+			}
+			buffer.print();
 		}
-		else if (bDelay)
+		else if (spiDelay)
 		{
 			buffer.addStr("timed out", "%s\n\r");
 			buffer.print();
