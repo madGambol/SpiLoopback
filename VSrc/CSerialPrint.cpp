@@ -230,18 +230,47 @@ CSerialPrint* CSerialPrint::getInstance( UART_HandleTypeDef * pUart )
 {
    CSerialPrint* pRetVal = nullptr;
 
-   if (pUart == &huart1)
+   do
    {
-      static CSerialPrint serial1( pUart );
+	   //
+	   // HUART1, 2, 3 are set in project properties under #SYMBOLS
+	   //
+#if HUART1==1
+	   if (pUart == &huart1)
+	   {
+		  static CSerialPrint serial1( pUart );
 
-      pRetVal = &serial1;
-   }
-   else if (pUart == &huart2)
-   {
-      static CSerialPrint serial2( pUart );
+		  pRetVal = &serial1;
 
-      pRetVal = &serial2;
-   }
+		  break;
+	   }
+#endif
+#if HUART2==1
+	   if (pUart == &huart2)
+	   {
+		  static CSerialPrint serial2( pUart );
+
+		  pRetVal = &serial2;
+
+		  break;
+	   }
+#endif
+#if HUART3==1
+	   if (pUart == &huart3)
+	   {
+		  static CSerialPrint serial3( pUart );
+
+		  pRetVal = &serial3;
+		  break;
+	   }
+#endif
+
+#if HUART1==1 || HUART2==1 || HUART3==1
+#else
+#error NO UART SELECTED
+#endif
+
+   } while(0);
 
    return pRetVal;
 }
@@ -277,7 +306,12 @@ void CSerialPrint::dmaOutputComplete( DMA_HandleTypeDef * hdma )
 
    for (indx = 0; indx < gInstanceIndx; ++indx)
    {
-      if (gpInstance[indx] && (gpInstance[indx]->mpUart) && (gpInstance[indx]->mpUart->hdmatx == hdma))
+      if ( gpInstance[indx]
+	       &&
+		   (gpInstance[indx]->mpUart)
+		   &&
+		   (gpInstance[indx]->mpUart->hdmatx == hdma)
+		  )
       {
          gpInstance[indx]->transmitComplete();
          break;
@@ -285,10 +319,10 @@ void CSerialPrint::dmaOutputComplete( DMA_HandleTypeDef * hdma )
    }
 }
 
-uint32_t myMin( int a, int b)
-{
-    return (uint32_t)((a)<(b)?a:b);
-}
+//uint32_t myMin( int a, int b)
+//{
+//    return (uint32_t)((a)<(b)?a:b);
+//}
 
 void CSerialPrint::transmitComplete()
 {

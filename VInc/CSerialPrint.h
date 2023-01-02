@@ -18,7 +18,7 @@ class CSerialPrint
 
    bool mbDmaBusy;
 
-   enum { NUM_SERIAL_DEVICES = 2 };
+   enum { NUM_SERIAL_DEVICES = 3 };
 
    static CSerialPrint * gpInstance[ NUM_SERIAL_DEVICES ];
    static volatile uint8_t gInstanceIndx;
@@ -65,7 +65,7 @@ public:
    static void transmitComplete    ( UART_HandleTypeDef * pUart );
 
    static void dmaOutputComplete   ( DMA_HandleTypeDef  * hdma  );
-   //static void DmaInputComplete    ( DMA_HandleTypeDef  * hdma  );
+   static void DmaInputComplete    ( DMA_HandleTypeDef  * hdma  );
 };
 
 void _putchar_( char ch );

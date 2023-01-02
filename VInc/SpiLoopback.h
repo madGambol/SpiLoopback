@@ -6,8 +6,6 @@
  *      Author: C Arena
  */
 
-
 #include "main.h"
 
-extern "C" void Main(void);
-
+extern "C" void MainCpp(void);

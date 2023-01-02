@@ -137,7 +137,7 @@ bool CFormattedBuffer::addInt( int32_t value, const char * pFormat )
 
         if ((outSize + mOffset) >= sizeof(mMsgBuf)) break;
 
-        bRetVal = true;
+        bRetVal  = true;
 
         mOffset += outSize;
 
@@ -237,6 +237,7 @@ bool CFormattedBuffer::gotoColrow (uint8_t col, uint8_t row)
     CHoldInterrupts now;
     bool bRetVal = false;
     constexpr const char * pCUP = "\033[%d;%dH";
+
     do
     {
         if ( mOffset >= sizeof(mMsgBuf) ) break;

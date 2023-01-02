@@ -11,8 +11,8 @@
 extern CFormattedBuffer buffer;
 
 
-uint32_t delay  = 0;
-bool     bDelay = false;
+volatile uint32_t delay  = 0;
+volatile bool     bDelay = false;
 
 uint32_t oneSec = 999;
 

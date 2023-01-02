@@ -68,9 +68,9 @@ bool CSpiMaster::sendRcv( uint8_t * pBufOut, uint8_t * pBufIn, uint16_t size, in
 
 		HAL_StatusTypeDef status;
 
-		status = HAL_SPI_TransmitReceive_DMA(mpSpiDev, pBufOut, pBufIn, size );
+		status      = HAL_SPI_TransmitReceive_DMA(mpSpiDev, pBufOut, pBufIn, size );
 
-		bRetVal = status == HAL_OK;
+		bRetVal     = status == HAL_OK;
 
 	} while(0);
 
@@ -119,10 +119,9 @@ void CSpiMaster::transferComplete( SPI_HandleTypeDef * pSpi )
 		if (!pSpi       ) break;
 		if (!gpSpiMaster) break;
 
-		if (gpSpiMaster->mpSpiDev == pSpi)
-		{
-			gpSpiMaster->transferComplete();
-		}
+		if (gpSpiMaster->mpSpiDev != pSpi) break;
+
+		gpSpiMaster->transferComplete();
 
 	} while(0);
 }
@@ -157,7 +156,6 @@ bool CSpiMaster::setCallback( transmitCompleteCB * pCB )
 		bRetVal = true;
 
 	} while(0);
-
 
 	return bRetVal;
 }
