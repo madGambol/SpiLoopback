@@ -192,6 +192,7 @@ void MainMasterSlave(void)
 		while (!bDelay) { /* wait a second here */ }
 
 		memcpy( oldMasterBufOut, spiMasterBufOut, sizeof(oldMasterBufOut) ); // save old data
+		memcpy( spiSlaveBufOut,  spiSlaveBufIn,   sizeof(spiSlaveBufOut)  ); // save old data
 
 		memset( spiMasterBufOut,  0, sizeof(spiMasterBufOut) ); // fill
 		memset( spiMasterBufIn,   0, sizeof(spiMasterBufIn)  ); // fill
