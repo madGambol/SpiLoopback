@@ -31,6 +31,7 @@
 #include "SpiLoopback.h"
 #include "CSerialPrint.h"
 #include "CSpiMaster.h"
+#include "CSpiSlave.h"
 #include "CFormattedBuffer.h"
 #include "mySysTick.h"
 #include <stdio.h>
@@ -45,6 +46,13 @@ void myTransmitCompleteCB( SPI_HandleTypeDef * pSpiDev,
 						   uint16_t size
 						 );
 
+void myReceiveCompleteCB( SPI_HandleTypeDef * pSpiDev,
+		                  const uint8_t * pBufIn,
+						  const uint8_t * pBufOut,
+						  uint16_t size
+						);
+
+
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart2;
 
@@ -57,22 +65,31 @@ extern SPI_HandleTypeDef  hspi1;    // master
 extern SPI_HandleTypeDef  hspi3;    // slave
 
 CSpiMaster gSpiMaster ( &hspi1 );
+CSpiSlave  gSpiSlave  ( &hspi3 );
 
 CFormattedBuffer buffer;
+CFormattedBuffer slaveBuffer; // used by the slave
 
-uint8_t spiBufIn [128] = {0,};
-uint8_t spiBufOut[128] = {0,};
+uint8_t spiMasterBufIn [128] = {0,};
+uint8_t spiMasterBufOut[128] = {0,};
+uint8_t oldMasterBufOut[128] = {0,}; // this buffer saves the prior output for comparison
+
+/////////////// Separate buffers for the Slave SPI device
+
+uint8_t spiSlaveBufIn  [128] = {0,};
+uint8_t spiSlaveBufOut [128] = {0,};
 
 volatile bool gbTransmitComplete;
+volatile bool gbReceiveComplete;
 
 int sndRcvStatus;
+int rcvSndStatus;
 
 extern volatile bool     bDelay;
 extern volatile uint32_t delay;
 
 extern volatile uint32_t spiDelay;
 extern volatile bool     bSpiDelay;
-
 
 void sendITM( const char * pStr )
 {
@@ -110,118 +127,78 @@ void setUpBuf( uint8_t * pBuf, uint16_t size )
 
 bool gbBufferMatch = false;
 
-void MainCpp(void)
+bool bRcvSnd;
+bool bSndRcv;
+
+void MainMasterSlave(void)
 {
 	pSerial1 = CSerialPrint::getInstance ( &huart1 );
 
-	do
+	if (!pSerial1)
 	{
-		if (!pSerial1)
+		while (1) {}
+	}
+
+	if (!pSerial1->init())
+	{
+		while (1) {}
+	}
+
+	buffer.addStr( "\f\r\n\r\n\r\nStarting up MainMasterSlave\r\n" );
+	buffer.addStr( "SPI Loop back test\r\n" );
+	buffer.addStr(  "\r\n");
+	buffer.print();
+
+	sendITM("this is a test");
+
+	uint32_t count = 0;
+
+	for (int loop = 0; loop < 32; ++loop)
+	{
+		buffer.addInt(loop, "%04d : ");
+
+		for (int indx = 0; indx < 32; ++indx)
 		{
-			while (1) {}
-		}
-
-		if (!pSerial1->init())
-		{
-			while (1) {}
-		}
-
-		buffer.addStr( "\f\r\n\r\n\r\nStarting up MainCppLoop\r\n" );
-		buffer.addStr( "SPI Loop back test\r\n" );
-		buffer.addStr(  "\r\n");
-		buffer.print();
-
-		sendITM("this is a test");
-
-		uint32_t count = 0;
-
-		for (int loop = 0; loop < 32; ++loop)
-		{
-			buffer.addInt(loop, "%04d : ");
-
-			for (int indx = 0; indx < 32; ++indx)
-			{
-				buffer.addUInt( count++, "%4d, ");
-			}
-
-			buffer.print();
+			buffer.addUInt( count++, "%4d, ");
 		}
 
 		buffer.print();
+	}
 
-		gSpiMaster.init();
+	buffer.print();
 
-		gSpiMaster.setCallback( &myTransmitCompleteCB );
+	gSpiMaster.init();
+	gSpiSlave. init();
 
-		buffer.addStr( "gSpiMaster CB set up ");
-		buffer.print();
+	gSpiMaster.setCallback( &myTransmitCompleteCB );
+	gSpiSlave.setCallback ( &myReceiveCompleteCB  );
 
-		setUpBuf( spiBufOut, 128 );                // pattern to send
+	buffer.addStr( "gSpiMaster & gSpiSlave CB set up ");
+	buffer.print();
 
-		memset  ( spiBufIn,  255, sizeof(spiBufIn) ); // fill with 'ff' to see change
+	setUpBuf( spiMasterBufOut, 128 );                // pattern to send
 
-		gbTransmitComplete = false;
-		sndRcvStatus       = HAL_ERROR;
-
-		bDelay = false;
-		delay  = 1000; // one second
-
-		while (!bDelay) { /* wait a second here */ }
-
-		delay  = 1000; // timeout for the transfer
-		bDelay = false;
-
-		bool bSndRcv = gSpiMaster.sendRcv( spiBufOut, spiBufIn, 128, sndRcvStatus );
-
-		if (!bSndRcv)
-		{
-			buffer.addStr( "transfer failed\r\n");
-			buffer.print();
-			break;
-		}
-
-		while (!bDelay && !gbTransmitComplete)
-		{
-			// spin our wheels
-		}
-
-		if (gbTransmitComplete)
-		{
-			gbTransmitComplete = false;
-
-			buffer.addStr("Transmit complete.", "%s\n\r" );
-
-			if (memcmp(spiBufIn, spiBufOut, 128) == 0)
-			{
-				buffer.addStr("Input & output match!", "%s\n\r" );
-
-				gbBufferMatch = true;
-			}
-		}
-		else if (bDelay)
-		{
-			buffer.addStr("timed out", "%s\n\r");
-		}
-
-		buffer.print();
-
-	} while(0);
+	memset  ( spiMasterBufIn,  255, sizeof(spiMasterBufIn) ); // fill with 'ff' to see change
 
 	uint32_t loopCount = 0;
 
 	bDelay = false;
 	delay  = 1000;     // one second
 
+	memset( spiMasterBufOut,  0, sizeof(spiMasterBufOut) ); // fill
+
 	while (1)
 	{
 		while (!bDelay) { /* wait a second here */ }
 
-		memset  ( spiBufOut,  0, sizeof(spiBufOut) ); // fill
-		memset  ( spiBufIn,   0, sizeof(spiBufIn)  ); // fill
+		memcpy( oldMasterBufOut, spiMasterBufOut, sizeof(oldMasterBufOut) ); // save old data
 
-		snprintf( (char *)spiBufOut, sizeof(spiBufOut), "Loop Count = %ld\n", loopCount++);
+		memset( spiMasterBufOut,  0, sizeof(spiMasterBufOut) ); // fill
+		memset( spiMasterBufIn,   0, sizeof(spiMasterBufIn)  ); // fill
 
-		buffer.addStr( (const char *)spiBufOut );
+		snprintf( (char *)spiMasterBufOut, sizeof(spiMasterBufOut), "Loop Count = %ld\n", loopCount++);
+
+		buffer.addStr( (const char *)spiMasterBufOut );
 		buffer.print();
 
 		bDelay             = false;
@@ -232,21 +209,31 @@ void MainCpp(void)
 
 		gbTransmitComplete = false;
 
-		bool bSndRcv = gSpiMaster.sendRcv( spiBufOut, spiBufIn, 128, sndRcvStatus );
+		gbReceiveComplete  = false;
+
+		bRcvSnd = gSpiSlave. sendRcv( spiSlaveBufOut,  spiSlaveBufIn,  128, rcvSndStatus );
+
+		bSndRcv = gSpiMaster.sendRcv( spiMasterBufOut, spiMasterBufIn, 128, sndRcvStatus );
 
 		if (!bSndRcv)
 		{
-			buffer.addUInt( loopCount,"transfer %ld failed\r\n");
+			buffer.addUInt( loopCount,"Master sendRcv call # %ld failed\r\n");
 			buffer.print();
 		}
 
-		while (!bSpiDelay && !gbTransmitComplete) {}
+		if (!bRcvSnd)
+		{
+			buffer.addUInt( loopCount,"Slave sendRcv call # %ld failed\r\n");
+			buffer.print();
+		}
+
+		while (!bSpiDelay && !gbTransmitComplete && !gbReceiveComplete) {}
 
 		if (gbTransmitComplete)
 		{
 			buffer.addUInt(loopCount, "Transmit %ld complete : " );
 
-			if (memcmp(spiBufIn, spiBufOut, 128) == 0)
+			if (memcmp( spiMasterBufIn, oldMasterBufOut, 128 ) == 0)
 			{
 				buffer.addStr( "Input & output match!", "%s\n\r" );
 			}
@@ -254,21 +241,44 @@ void MainCpp(void)
 			{
 				buffer.addStr( "Input & output DO NOT match!", "%s\n\r" );
 			}
+
 			buffer.print();
 		}
 		else if (spiDelay)
 		{
-			buffer.addStr("timed out", "%s\n\r");
+			buffer.addStr("transmit timed out", "%s\n\r");
+			buffer.print();
+		}
+
+		if (gbReceiveComplete)
+		{
+			buffer.addUInt(loopCount, "Receive %ld complete : " );
+
+			if (memcmp( spiMasterBufOut, spiSlaveBufIn, 128 ) == 0)
+			{
+				buffer.addStr( "Master output & Slave input match!", "%s\n\r" );
+			}
+			else
+			{
+				buffer.addStr( "Master output & Slave input DO NOT match!", "%s\n\r" );
+			}
+
 			buffer.print();
 		}
 
 		gbTransmitComplete = false;
+		gbReceiveComplete  = false;
 	}
 }
 
 void myTransmitCompleteCB( SPI_HandleTypeDef * pSpiDev, const uint8_t * pBufIn, const uint8_t * pBufOut, uint16_t size)
 {
 	gbTransmitComplete = true;
+}
+
+void myReceiveCompleteCB( SPI_HandleTypeDef * pSpiDev, const uint8_t * pBufIn, const uint8_t * pBufOut, uint16_t size)
+{
+	gbReceiveComplete  = true;
 }
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)

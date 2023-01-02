@@ -10,7 +10,7 @@
 #include <cstdint>
 #include "main.h"
 
-enum { eSERBUFSIZE = 4096 };
+enum { eSERBUFSIZE = 1024 };
 
 class CSerialPrint
 {

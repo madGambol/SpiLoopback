@@ -103,7 +103,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  MainCpp();
+	MainMasterSlave();
 
     /* USER CODE END WHILE */
 

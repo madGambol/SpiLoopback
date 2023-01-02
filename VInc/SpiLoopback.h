@@ -8,4 +8,4 @@
 
 #include "main.h"
 
-extern "C" void MainCpp(void);
+extern "C" void MainMasterSlave(void);
