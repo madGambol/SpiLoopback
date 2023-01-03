@@ -68,7 +68,6 @@ CSpiMaster gSpiMaster ( &hspi1 );
 CSpiSlave  gSpiSlave  ( &hspi3 );
 
 CFormattedBuffer buffer;
-CFormattedBuffer slaveBuffer; // used by the slave
 
 uint8_t spiMasterBufIn [128] = {0,};
 uint8_t spiMasterBufOut[128] = {0,};
@@ -192,7 +191,7 @@ void MainMasterSlave(void)
 		while (!bDelay) { /* wait a second here */ }
 
 		memcpy( oldMasterBufOut, spiMasterBufOut, sizeof(oldMasterBufOut) ); // save old data
-		memcpy( spiSlaveBufOut,  spiSlaveBufIn,   sizeof(spiSlaveBufOut)  ); // save old data
+		memcpy( spiSlaveBufOut,  spiSlaveBufIn,   sizeof(spiSlaveBufOut)  ); // cpy master data in to slave data out
 
 		memset( spiMasterBufOut,  0, sizeof(spiMasterBufOut) ); // fill
 		memset( spiMasterBufIn,   0, sizeof(spiMasterBufIn)  ); // fill
@@ -212,8 +211,14 @@ void MainMasterSlave(void)
 
 		gbReceiveComplete  = false;
 
+		//
+		// set up the slave first as that will wait for the master's data
+		//
 		bRcvSnd = gSpiSlave. sendRcv( spiSlaveBufOut,  spiSlaveBufIn,  128, rcvSndStatus );
 
+		//
+		// send the master's data packet
+		//
 		bSndRcv = gSpiMaster.sendRcv( spiMasterBufOut, spiMasterBufIn, 128, sndRcvStatus );
 
 		if (!bSndRcv)
