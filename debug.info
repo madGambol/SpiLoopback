@@ -1,0 +1,17 @@
+#!/bin/bash
+
+openocd -f interface/stlink.cfg -f target/stm32f3x.cfg 
+
+#
+# gdbgui -g /opt/homebrew/bin/arm-none-eabi-gdb build.STM32F303/SpiLoopback.elf
+#
+# target extended-remote :3333     (for local instance of openocd)
+#
+# target extended-remote host:3333 (for remote 'host', ip or symbolic name)
+#
+# Shorthand:
+#
+# target ext :3333
+# target ext host:3333
+#
+

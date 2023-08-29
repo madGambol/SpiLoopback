@@ -1,7 +1,7 @@
 #pragma once
 /*
  * File:   CSpiSlave.h
- * Author: C. Arena at Hallowell EMC
+ * Author: C. Arena
  *
  * Created on April 8, 2016, 4:49 PM
  * Modified on January 1, 2023, 4:49 PM

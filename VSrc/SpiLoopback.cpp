@@ -90,23 +90,6 @@ extern volatile uint32_t delay;
 extern volatile uint32_t spiDelay;
 extern volatile bool     bSpiDelay;
 
-void sendITM( const char * pStr )
-{
-	do
-	{
-		if (!pStr) break;
-
-		size_t len = strlen(pStr);
-
-		size_t indx;
-
-		for (indx = 0; indx < len; ++indx )
-		{
-			ITM_SendChar( (uint32_t)pStr[indx] ); // synchronous
-		}
-	} while(0);
-}
-
 void setUpBuf( uint8_t * pBuf, uint16_t size )
 {
 	do
@@ -148,22 +131,6 @@ void MainMasterSlave(void)
 	buffer.addStr(  "\r\n");
 	buffer.print();
 
-	sendITM("this is a test");
-
-	uint32_t count = 0;
-
-	for (int loop = 0; loop < 32; ++loop)
-	{
-		buffer.addInt(loop, "%04d : ");
-
-		for (int indx = 0; indx < 32; ++indx)
-		{
-			buffer.addUInt( count++, "%4d, ");
-		}
-
-		buffer.print();
-	}
-
 	buffer.print();
 
 	gSpiMaster.init();
@@ -191,12 +158,15 @@ void MainMasterSlave(void)
 		while (!bDelay) { /* wait a second here */ }
 
 		memcpy( oldMasterBufOut, spiMasterBufOut, sizeof(oldMasterBufOut) ); // save old data
-		memcpy( spiSlaveBufOut,  spiSlaveBufIn,   sizeof(spiSlaveBufOut)  ); // cpy master data in to slave data out
+		memcpy( spiSlaveBufOut,  spiSlaveBufIn,   sizeof(spiSlaveBufOut)  ); // copy master data in to slave data out
 
-		memset( spiMasterBufOut,  0, sizeof(spiMasterBufOut) ); // fill
-		memset( spiMasterBufIn,   0, sizeof(spiMasterBufIn)  ); // fill
+		memset( spiMasterBufOut,  0, sizeof(spiMasterBufOut) ); // fill with zeroes
+		memset( spiMasterBufIn,   0, sizeof(spiMasterBufIn)  ); // fill with zeroes
 
-		snprintf( (char *)spiMasterBufOut, sizeof(spiMasterBufOut), "Loop Count = %ld\n", loopCount++);
+		snprintf( (char *)spiMasterBufOut, sizeof(spiMasterBufOut),
+				  "From Master:Loop Count = %ld\n",
+			 	  loopCount++
+				);
 
 		buffer.addStr( (const char *)spiMasterBufOut );
 		buffer.print();
@@ -277,12 +247,20 @@ void MainMasterSlave(void)
 	}
 }
 
-void myTransmitCompleteCB( SPI_HandleTypeDef * pSpiDev, const uint8_t * pBufIn, const uint8_t * pBufOut, uint16_t size)
+void myTransmitCompleteCB( SPI_HandleTypeDef * pSpiDev,
+		                   const uint8_t * pBufIn,
+						   const uint8_t * pBufOut,
+						   uint16_t        size
+						 )
 {
 	gbTransmitComplete = true;
 }
 
-void myReceiveCompleteCB( SPI_HandleTypeDef * pSpiDev, const uint8_t * pBufIn, const uint8_t * pBufOut, uint16_t size)
+void myReceiveCompleteCB( SPI_HandleTypeDef * pSpiDev,
+		                  const uint8_t * pBufIn,
+						  const uint8_t * pBufOut,
+						  uint16_t        size
+						)
 {
 	gbReceiveComplete  = true;
 }

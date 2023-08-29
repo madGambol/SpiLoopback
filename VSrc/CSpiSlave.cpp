@@ -1,6 +1,6 @@
 /*
  * File:   CSpiSlave.cpp
- * Author: C. Arena at Hallowell EMC
+ * Author: C. Arena
  *
  * Created on April 8, 2016, 4:49 PM
  */

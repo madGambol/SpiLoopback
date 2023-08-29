@@ -28,15 +28,7 @@ public:
 
     bool addStr( const char * pStr, const char * pFormat = "%s" );
 
-    bool addFloat( float value,    const char * pFormat = "%f" );
-
-    bool addInt  ( int32_t value,  const char * pFormat = "%ld" );
-
     bool addUInt ( uint32_t value, const char * pFormat = "%lu" );
-
-    bool addBool ( bool value,     const char * pFormat = "%s" );
-
-    bool gotoColrow( uint8_t col, uint8_t row);
 
     uint16_t getOffset(void) const;
 
