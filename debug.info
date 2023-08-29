@@ -14,4 +14,15 @@ openocd -f interface/stlink.cfg -f target/stm32f3x.cfg
 # target ext :3333
 # target ext host:3333
 #
+# If a remote session of openocd is required and blocked by firewall rules, an 
+# ssh tunnel can be set up. The port then appears as a local port:
+#
+# ssh -L 3333:localhost:3333 user@remoteHost
+#
+# Unless you have an ssh key set up, a password will be required.
+#
+# Then this command should return immediately. While running, port 3333 will redirect
+# the activity to the remoteHost machine where openocd is set up to directly connect
+# to the target machine.
+#
 
