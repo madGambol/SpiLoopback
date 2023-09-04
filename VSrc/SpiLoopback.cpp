@@ -15,14 +15,14 @@
  *              RX
  *
  *      SPI1 (Master):
- *              NSS  PA4  CN07-32  CN8-3 <-----------*
- *              SCLK PB3  CN10-31  CN9-4 <--------*  |
+ *              NSS  PA4  CN07-32  CN8-3 >-----------*
+ *              SCLK PB3  CN10-31  CN9-4 >--------*  |
  *              MISO PB4  CN10-27  CN9-6 <-----*  |  |
- *              MOSI PB5  CN10-29  CN9-5 <--*  |  |  |
+ *              MOSI PB5  CN10-29  CN9-5 >--*  |  |  |
  *                                          |  |  |  |
  *      SPI3 (Slave):                       |  |  |  |
  *              MOSI PC12 CN07-3   -na-  <--*  |  |  |
- *              MISO PC11 CN07-2   -na-  <-----*  |  |
+ *              MISO PC11 CN07-2   -na-  >-----*  |  |
  *              SCLK PC10 CN07-1   -na-  <--------*  |
  *              NSS  PA15 CN07-17  -na-  <-----------*
  */
