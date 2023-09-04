@@ -7,24 +7,24 @@
  *      Connections for NUCLEO-F303RE
  *
  *      UART1:
- *              TX   PA2  CN10-35  CN9-2
- *              RX   PA3  CN10-37  CN9-1
+ *              TX   PC4  CN10-34  -na-
+ *              RX   PC5  CN10-6   CN9-1
  *
  *      UART2:
- *              TX   PB10 CN10-25  CN9-7
- *              RX   PB11 CN10-18  -na-
+ *              TX
+ *              RX
  *
- *      SPI1:
- *              SCLK PB3  CN10-31  CN9-4
- *              MISO PB4  CN10-27  CN9-6
- *              MOSI PB5  CN10-29  CN9-5
- *              NSS  PA15 CN07-32  CN8-3
- *
- *      SPI3:
- *              SCLK PC10 CN07-1   -na-
- *              MISO PC11 CN07-2   -na-
- *              MOSI PC12 CN07-3   -na-
- *              NSS  PA15 CN07-17  -na-
+ *      SPI1 (Master):
+ *              NSS  PA4  CN07-32  CN8-3 <-----------*
+ *              SCLK PB3  CN10-31  CN9-4 <--------*  |
+ *              MISO PB4  CN10-27  CN9-6 <-----*  |  |
+ *              MOSI PB5  CN10-29  CN9-5 <--*  |  |  |
+ *                                          |  |  |  |
+ *      SPI3 (Slave):                       |  |  |  |
+ *              MOSI PC12 CN07-3   -na-  <--*  |  |  |
+ *              MISO PC11 CN07-2   -na-  <-----*  |  |
+ *              SCLK PC10 CN07-1   -na-  <--------*  |
+ *              NSS  PA15 CN07-17  -na-  <-----------*
  */
 
 #include "main.h"
