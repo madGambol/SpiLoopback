@@ -12,7 +12,6 @@
 
 enum { eMSGBUFSIZE = 2048 };
 
-
 class CFormattedBuffer
 {
     char     mMsgBuf[eMSGBUFSIZE];

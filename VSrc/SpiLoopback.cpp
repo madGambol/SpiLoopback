@@ -7,7 +7,7 @@
  *      Connections for NUCLEO-F303RE
  *
  *      UART1:
- *              TX   PC4  CN10-34  -na-
+ *              TX   PC4  CN10-34  -na-  >--------> debug serial output
  *              RX   PC5  CN10-6   CN9-1
  *
  *      UART2:
@@ -139,7 +139,7 @@ void MainMasterSlave(void)
 	gSpiMaster.setCallback( &myTransmitCompleteCB );
 	gSpiSlave.setCallback ( &myReceiveCompleteCB  );
 
-	buffer.addStr( "gSpiMaster & gSpiSlave CB set up ");
+	buffer.addStr( "gSpiMaster & gSpiSlave CB set up -- totally new");
 	buffer.print();
 
 	setUpBuf( spiMasterBufOut, 128 );                // pattern to send
