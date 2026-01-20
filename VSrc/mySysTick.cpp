@@ -2,7 +2,7 @@
  * mySysTick.cpp
  *
  *  Created on: Dec 13, 2022
- *      Author: christopherarena
+ *      Author: C Arena
  */
 #include "main.h"
 #include "mySysTick.h"

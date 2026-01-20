@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make)",
+      "Bash(PLATFORM=STM32F303 make:*)"
+    ]
+  }
+}

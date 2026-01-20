@@ -2,7 +2,7 @@
  * CSpiMaster.cpp
  *
  *  Created on: Dec 12, 2022
- *      Author: christopherarena
+ *      Author: C Arena
  */
 
 #include "CSpiMaster.h"
@@ -97,6 +97,9 @@ bool CSpiMaster::transferComplete(void)
 bool CSpiMaster::dmaComplete(void)
 {
 	bool bRetVal = false;
+
+	// Disable SPI to deassert NSS (drive it high)
+	__HAL_SPI_DISABLE(mpSpiDev);
 
 	do
 	{

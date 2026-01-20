@@ -75,8 +75,9 @@ uint8_t oldMasterBufOut[128] = {0,}; // this buffer saves the prior output for c
 
 /////////////// Separate buffers for the Slave SPI device
 
-uint8_t spiSlaveBufIn  [128] = {0,};
-uint8_t spiSlaveBufOut [128] = {0,};
+uint8_t spiSlaveBufIn  [128] = {0,}; // filled in during recv from master
+uint8_t spiSlaveBufOut [128] = {0,}; // set up with slave unique data
+uint8_t oldSlaveBufOut [128] = {0,}; // this buffer saves the prior output for comparison
 
 volatile bool gbTransmitComplete;
 volatile bool gbReceiveComplete;
@@ -90,7 +91,7 @@ extern volatile uint32_t delay;
 extern volatile uint32_t spiDelay;
 extern volatile bool     bSpiDelay;
 
-void setUpBuf( uint8_t * pBuf, uint16_t size )
+void setUpBufMaster( uint8_t * pBuf, uint16_t size )
 {
 	do
 	{
@@ -102,6 +103,23 @@ void setUpBuf( uint8_t * pBuf, uint16_t size )
 		for (indx = 0; indx < size; ++indx)
 		{
 			pBuf[indx] = ((uint8_t)indx) & 0x0ff; // just put the index there
+		}
+
+	} while(0);
+}
+
+void setUpBufSlave( uint8_t * pBuf, uint16_t size )
+{
+	do
+	{
+		if (!pBuf) break;
+		if (!size) break;
+
+		uint16_t indx;
+
+		for (indx = 0; indx < size; ++indx)
+		{
+			pBuf[indx] = (size - indx) & 0x0ff; // just put the index there
 		}
 
 	} while(0);
@@ -142,8 +160,6 @@ void MainMasterSlave(void)
 	buffer.addStr( "gSpiMaster & gSpiSlave CB set up -- totally new");
 	buffer.print();
 
-	setUpBuf( spiMasterBufOut, 128 );                // pattern to send
-
 	memset  ( spiMasterBufIn,  255, sizeof(spiMasterBufIn) ); // fill with 'ff' to see change
 
 	uint32_t loopCount = 0;
@@ -155,20 +171,20 @@ void MainMasterSlave(void)
 
 	while (1)
 	{
+		setUpBufMaster( spiMasterBufOut, 128 );        // pattern to send
+		setUpBufSlave ( spiSlaveBufOut,  128 );        // pattern to send
+
 		while (!bDelay) { /* wait a second here */ }
 
 		memcpy( oldMasterBufOut, spiMasterBufOut, sizeof(oldMasterBufOut) ); // save old data
-		memcpy( spiSlaveBufOut,  spiSlaveBufIn,   sizeof(spiSlaveBufOut)  ); // copy master data in to slave data out
 
-		memset( spiMasterBufOut,  0, sizeof(spiMasterBufOut) ); // fill with zeroes
-		memset( spiMasterBufIn,   0, sizeof(spiMasterBufIn)  ); // fill with zeroes
+		memset( spiMasterBufIn,  0, sizeof(spiMasterBufIn)  ); // fill with zeroes
 
-		snprintf( (char *)spiMasterBufOut, sizeof(spiMasterBufOut),
-				  "From Master:Loop Count = %ld\n",
-			 	  loopCount++
-				);
+		memcpy( oldSlaveBufOut,  spiSlaveBufOut, sizeof(spiSlaveBufOut) ); // save old data
 
-		buffer.addStr( (const char *)spiMasterBufOut );
+		memset( spiSlaveBufIn,   0, sizeof(spiSlaveBufIn)  );  // fill with zeroes
+
+		buffer.addUInt( loopCount++, "From Master:Loop Count = %ld\n" );
 		buffer.print();
 
 		bDelay             = false;
@@ -209,13 +225,13 @@ void MainMasterSlave(void)
 		{
 			buffer.addUInt(loopCount, "Transmit %ld complete : " );
 
-			if (memcmp( spiMasterBufIn, oldMasterBufOut, 128 ) == 0)
+			if (memcmp( spiSlaveBufIn, spiMasterBufOut, 128 ) == 0)
 			{
 				buffer.addStr( "Input & output match!", "%s\n\r" );
 			}
 			else
 			{
-				buffer.addStr( "Input & output DO NOT match!", "%s\n\r" );
+				buffer.addStr( "Slave Input & Master output DO NOT match!", "%s\n\r" );
 			}
 
 			buffer.print();
@@ -230,13 +246,13 @@ void MainMasterSlave(void)
 		{
 			buffer.addUInt(loopCount, "Receive %ld complete : " );
 
-			if (memcmp( spiMasterBufOut, spiSlaveBufIn, 128 ) == 0)
+			if (memcmp( spiMasterBufIn, spiSlaveBufOut, 128 ) == 0)
 			{
-				buffer.addStr( "Master output & Slave input match!", "%s\n\r" );
+				buffer.addStr( "Master Input & Slave output match!", "%s\n\r" );
 			}
 			else
 			{
-				buffer.addStr( "Master output & Slave input DO NOT match!", "%s\n\r" );
+				buffer.addStr( "Master Input & Slave output DO NOT match!", "%s\n\r" );
 			}
 
 			buffer.print();
@@ -267,5 +283,7 @@ void myReceiveCompleteCB( SPI_HandleTypeDef * pSpiDev,
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
+	//__HAL_SPI_DISABLE(hspi);  // Deassert NSS (drive high)
 	CSpiMaster::transferComplete( hspi );
+	CSpiSlave::transferComplete( hspi );
 }

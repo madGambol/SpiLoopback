@@ -54,7 +54,7 @@ bool CFormattedBuffer::addTime (const char * pFormat)
 
         if ((outSize + mOffset) >= sizeof(mMsgBuf)) break;
 
-        bRetVal = true;
+        bRetVal  = true;
 
         mOffset += outSize;
 
