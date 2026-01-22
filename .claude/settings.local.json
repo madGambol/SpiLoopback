@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(make)",
-      "Bash(PLATFORM=STM32F303 make:*)"
+      "Bash(PLATFORM=STM32F303 make:*)",
+      "Bash(wc:*)",
+      "Bash(git -C /Users/christopherarena/Projects/SpiLoopback log --oneline -10)"
     ]
   }
 }
